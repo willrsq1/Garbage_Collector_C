@@ -6,7 +6,7 @@
 /*   By: wruet-su <william.ruetsuquet@gmail.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/30 14:55:37 by wruet-su          #+#    #+#             */
-/*   Updated: 2023/04/30 15:25:54 by wruet-su         ###   ########.fr       */
+/*   Updated: 2023/04/30 16:23:10 by wruet-su         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,10 @@
 
 typedef struct s_to_be_freed		t_to_be_freed;
 typedef	struct s_Garbage_collector	t_Garbage_collector;
+
+void	*ft_calloc(size_t nmemb, t_Garbage_collector *Garbage);
+void	ft_free_everything_lol(t_Garbage_collector *Garbage); //frees all
+int		ft_free_this_data(t_Garbage_collector *Garbage, void *ptr); //frees one data
 
 static void	ft_lst_malloc(t_Garbage_collector *Garbage, void *ptr);
 static void	ft_bzero(void *s, size_t n);
@@ -44,6 +48,7 @@ void	ft_free_everything_lol(t_Garbage_collector *Garbage)
 		temp = lst->next;
 		if (lst->data)
 			free (lst->data);
+		lst->data = NULL;
 		free (lst);
 		lst = temp;
 	}
@@ -107,6 +112,27 @@ static void	ft_bzero(void *s, size_t n)
 	}
 }
 
+int	ft_free_this_data(t_Garbage_collector *Garbage, void *ptr)
+{
+	t_to_be_freed	*lst;
+	t_to_be_freed	*temp;
+
+	lst = Garbage->first_lst;
+	if (!lst)
+		return (-1);
+	while (lst && lst->next && lst->next->data != ptr)
+		lst = lst->next;
+	temp = lst;
+	if (lst->data != ptr)
+		lst = lst->next;
+	free (lst->data);
+	temp->next = lst->next;
+	if (lst == temp)
+		Garbage->first_lst = lst->next;
+	free(lst);
+	return (0);
+}
+
 /* Run with leaks detector ! */
 
 int	main()
@@ -118,14 +144,21 @@ int	main()
 
 	i = -1;
 	Garbage.first_lst = NULL;
-	example = ft_calloc(sizeof(char **) * 10000, &Garbage);
+	example = ft_calloc(sizeof(char **) * 7172000, &Garbage);
 	while (++i < 100)
 	{
-		example[i] = ft_calloc(sizeof(char *) * 10000, &Garbage);
+		example[i] = ft_calloc(sizeof(char *) * 100, &Garbage);
 		y = -1;
 		while (++y < 100)
-			example[i][y] = ft_calloc(sizeof(char) * 10000, &Garbage);
+			example[i][y] = ft_calloc(sizeof(char) * 10, &Garbage);
 	}
+	ft_free_this_data(&Garbage, example[3]);
+	ft_free_this_data(&Garbage, example[17][6]);
+	ft_free_this_data(&Garbage, example[77][42]);
+	ft_free_this_data(&Garbage, example[13][06]);
+	ft_free_everything_lol(&Garbage);
+	ft_calloc(39012, &Garbage);
+	ft_free_everything_lol(&Garbage); //repeated calls don't crash !
 	ft_free_everything_lol(&Garbage);
 	write(1, "Everything has been freed.\n", 28);
 	return (0);
