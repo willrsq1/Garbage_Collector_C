@@ -6,7 +6,7 @@
 /*   By: wruet-su <william.ruetsuquet@gmail.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/30 14:55:37 by wruet-su          #+#    #+#             */
-/*   Updated: 2023/04/30 16:23:10 by wruet-su         ###   ########.fr       */
+/*   Updated: 2023/04/30 16:36:03 by wruet-su         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,13 +118,15 @@ int	ft_free_this_data(t_Garbage_collector *Garbage, void *ptr)
 	t_to_be_freed	*temp;
 
 	lst = Garbage->first_lst;
-	if (!lst)
+	if (!lst || !ptr)
 		return (-1);
 	while (lst && lst->next && lst->next->data != ptr)
 		lst = lst->next;
 	temp = lst;
-	if (lst->data != ptr)
+	if (lst->data != ptr) //if first lst has the malloced address
 		lst = lst->next;
+	if (!lst)
+		return (-1); //invalid pointer
 	free (lst->data);
 	temp->next = lst->next;
 	if (lst == temp)
@@ -144,7 +146,7 @@ int	main()
 
 	i = -1;
 	Garbage.first_lst = NULL;
-	example = ft_calloc(sizeof(char **) * 7172000, &Garbage);
+	example = ft_calloc(sizeof(char **) * 17072000, &Garbage);
 	while (++i < 100)
 	{
 		example[i] = ft_calloc(sizeof(char *) * 100, &Garbage);
@@ -152,14 +154,16 @@ int	main()
 		while (++y < 100)
 			example[i][y] = ft_calloc(sizeof(char) * 10, &Garbage);
 	}
-	ft_free_this_data(&Garbage, example[3]);
-	ft_free_this_data(&Garbage, example[17][6]);
-	ft_free_this_data(&Garbage, example[77][42]);
+	ft_free_this_data(&Garbage, example[3]); //you can free a data when it's not needed anymore
+	ft_free_this_data(&Garbage, example[17][07]);
 	ft_free_this_data(&Garbage, example[13][06]);
+	ft_free_this_data(&Garbage, NULL); //crash test - no pointer
+	ft_free_this_data(&Garbage, &Garbage); //crash test - pointer that isn't a malloc
 	ft_free_everything_lol(&Garbage);
-	ft_calloc(39012, &Garbage);
-	ft_free_everything_lol(&Garbage); //repeated calls don't crash !
-	ft_free_everything_lol(&Garbage);
+	example = ft_calloc(39012, &Garbage);
+	ft_free_this_data(&Garbage, example);
+	ft_free_everything_lol(&Garbage); //calling when there is nothing to free won't crash
+	ft_free_everything_lol(&Garbage); //repeated calls won't crash either
 	write(1, "Everything has been freed.\n", 28);
 	return (0);
 }
