@@ -16,6 +16,6 @@ Stores everything that has been Malloced in a chained list.
 
 A main is available to try and see how to use it.
 
-Is user-error proof.
+Replace the Gargage struct by any struct of your own that stores the address of the first list of the chain !
 
 Enjoy !
